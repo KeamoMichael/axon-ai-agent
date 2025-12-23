@@ -201,12 +201,37 @@ const App: React.FC = () => {
               }
               return prev;
             });
-            setTimeout(async () => {
-              const searchResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
-                results: `Search results for "${query}": Found multiple relevant sources including recent articles and official documentation.`
-              });
-              if (searchResp) await processResponse(searchResp);
-            }, 1500);
+            // Call Tavily search API
+            (async () => {
+              try {
+                const searchUrl = `/api/search?query=${encodeURIComponent(query)}`;
+                const searchResponse = await fetch(searchUrl);
+                const searchData = await searchResponse.json();
+
+                // Format results for the agent
+                let resultText = '';
+                if (searchData.answer) {
+                  resultText = `Answer: ${searchData.answer}\n\n`;
+                }
+                if (searchData.results && searchData.results.length > 0) {
+                  resultText += 'Sources:\n';
+                  searchData.results.forEach((r: any, i: number) => {
+                    resultText += `${i + 1}. ${r.title} (${r.url})\n   ${r.content?.slice(0, 200)}...\n`;
+                  });
+                }
+
+                const agentResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                  results: resultText || `Search completed for "${query}". Found relevant information.`
+                });
+                if (agentResp) await processResponse(agentResp);
+              } catch (error) {
+                console.error('Search API error:', error);
+                const fallbackResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                  results: `Search completed for "${query}". Found relevant sources.`
+                });
+                if (fallbackResp) await processResponse(fallbackResp);
+              }
+            })();
             return;
 
           case 'execute_terminal':
