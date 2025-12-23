@@ -62,6 +62,7 @@ const App: React.FC = () => {
   const [isApiConfigured, setIsApiConfigured] = useState(true);
   const [browserUrl, setBrowserUrl] = useState<string>('');
   const [isBrowserActive, setIsBrowserActive] = useState(false);
+  const [sandboxFiles, setSandboxFiles] = useState<GeneratedFile[]>([]);
 
   const agentRef = useRef<GeminiAgent | null>(null);
 
@@ -302,6 +303,14 @@ const App: React.FC = () => {
 
                   if (files.length > 0) {
                     addLog(`Generated ${files.length} file(s)`, 'success');
+                    // Store real files from sandbox for download
+                    const generatedFiles: GeneratedFile[] = files.map((f: any) => ({
+                      name: f.name,
+                      type: f.name.endsWith('.zip') ? 'zip' : 'code',
+                      size: 'Generated',
+                      path: f.path
+                    }));
+                    setSandboxFiles(prev => [...prev, ...generatedFiles]);
                   }
 
                   const terminalResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
@@ -332,17 +341,14 @@ const App: React.FC = () => {
         }
       }
     } else if (text) {
-      const mockFiles: GeneratedFile[] = [];
-      if (text.toLowerCase().includes('index.html') || text.toLowerCase().includes('code')) {
-        mockFiles.push({ name: 'index.html', type: 'code', size: '384 B' });
-        mockFiles.push({ name: 'project_files.zip', type: 'zip', size: '1.2 MB' });
-      }
+      // Use real sandbox files instead of mock files
+      const realFiles = sandboxFiles.length > 0 ? sandboxFiles : [];
 
       setMessages(prev => {
         const last = prev[prev.length - 1];
         const updatedMessages = last?.role === 'assistant'
-          ? [...prev.slice(0, -1), { ...last, content: text, steps: (last.steps || []).map(s => ({ ...s, status: 'completed' as const })), groundingMetadata, generatedFiles: mockFiles }]
-          : [...prev, { id: Date.now().toString(), role: 'assistant', content: text, timestamp: new Date(), groundingMetadata, generatedFiles: mockFiles }];
+          ? [...prev.slice(0, -1), { ...last, content: text, steps: (last.steps || []).map(s => ({ ...s, status: 'completed' as const })), groundingMetadata, generatedFiles: realFiles }]
+          : [...prev, { id: Date.now().toString(), role: 'assistant', content: text, timestamp: new Date(), groundingMetadata, generatedFiles: realFiles }];
 
         // Update session in history when assistant finishes
         if (currentSessionId) {
@@ -352,6 +358,7 @@ const App: React.FC = () => {
       });
       setIsProcessing(false);
       setCurrentSteps([]);
+      setSandboxFiles([]); // Clear sandbox files after attaching to message
       addLog("Task completed successfully.", "success");
     }
   };

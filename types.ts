@@ -11,6 +11,7 @@ export interface GeneratedFile {
   name: string;
   type: 'code' | 'zip' | 'document';
   size?: string;
+  path?: string; // E2B sandbox file path for download
 }
 
 export interface PlanStep {
