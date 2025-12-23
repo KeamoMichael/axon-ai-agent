@@ -3,13 +3,21 @@
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Sandbox } from '@e2b/code-interpreter';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from dist folder (Vite build output)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -169,6 +177,14 @@ app.post('/api/sandbox', async (req, res) => {
     }
 });
 
+// SPA catch-all route - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 app.listen(PORT, () => {
-    console.log(`[Server] Sandbox API running on port ${PORT}`);
+    console.log(`[Server] Axon AI running on port ${PORT}`);
+    console.log(`[Server] Frontend: http://localhost:${PORT}`);
+    console.log(`[Server] Health: http://localhost:${PORT}/health`);
+    console.log(`[Server] API: http://localhost:${PORT}/api/sandbox`);
 });
