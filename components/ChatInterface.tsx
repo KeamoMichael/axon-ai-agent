@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ICONS } from '../constants';
 import { ChatMessage, PlanStep, GeneratedFile } from '../types';
+import ComputerPreview from './ComputerPreview';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -724,6 +725,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           ))}
                         </div>
                       )}
+
+                      {/* Computer Preview - show when browser or terminal is being used */}
+                      {msg.steps && msg.steps.some(s => s.status === 'active' && (s.toolUsed === 'browse' || s.toolUsed === 'terminal')) && (() => {
+                        const activeStep = msg.steps.find(s => s.status === 'active');
+                        return (
+                          <div className="my-4">
+                            <ComputerPreview
+                              isActive={true}
+                              currentAction={activeStep?.toolUsed === 'browse' ? 'Using Browser' : 'Running command'}
+                              browserUrl={activeStep?.toolUsed === 'browse' ? activeStep?.description : undefined}
+                              onTakeControl={() => console.log('Take control clicked')}
+                              onExpand={() => console.log('Expand clicked')}
+                            />
+                          </div>
+                        );
+                      })()}
 
                       {msg.content && (
                         <div className="text-[16px] font-medium text-[#2d3748] leading-relaxed max-w-[95%]">
