@@ -7,7 +7,8 @@
     ],
     "functions": {
         "api/search.ts": {
-            "runtime": "@vercel/node@3.0.0"
+            "runtime": "@vercel/node@3.0.0",
+            "nodeVersion": "18.x"
         }
     }
 }
