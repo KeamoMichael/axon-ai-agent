@@ -19,7 +19,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { action, code, filepath, content, metadata } = req.body;
+    let action: string = '';
+    let code: string = '';
+    let filepath: string = '';
+    let content: string = '';
+    let metadata: any = {};
+
+    try {
+        const body = req.body || {};
+        action = body.action || '';
+        code = body.code || '';
+        filepath = body.filepath || '';
+        content = body.content || '';
+        metadata = body.metadata || {};
+    } catch (parseError) {
+        console.error('[E2B] Failed to parse request body:', parseError);
+        return res.status(200).json({
+            success: false,
+            output: '',
+            error: 'Failed to parse request',
+            files: []
+        });
+    }
 
     // E2B reads API key from E2B_API_KEY environment variable automatically
     const E2B_API_KEY = process.env.E2B_API_KEY;
@@ -29,29 +50,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
             success: false,
             output: 'E2B_API_KEY not configured. Please add it to Vercel environment variables.',
-            error: 'API key missing'
+            error: 'API key missing',
+            files: []
         });
     }
 
     let sandbox: Sandbox | null = null;
 
     try {
-        console.log('[E2B] Creating sandbox...');
+        console.log('[E2B] Creating sandbox with 24h timeout...');
 
-        // Create a new sandbox session with 15 minute timeout and metadata for tracking
-        // E2B reads API key from env automatically
+        // Create a new sandbox session with 24 HOUR timeout (max allowed) for persistent agentic tasks
+        // timeout is in SECONDS per E2B docs
         sandbox = await Sandbox.create({
-            timeoutMs: 15 * 60 * 1000,  // 15 minutes for complex agentic tasks
-            metadata: metadata || {
-                sessionId: 'anonymous',
-                timestamp: new Date().toISOString()
+            timeout: 86400,  // 24 hours in seconds (max allowed by E2B)
+            metadata: {
+                sessionId: metadata?.sessionId || 'anonymous',
+                timestamp: new Date().toISOString(),
+                ...metadata
             }
         });
-        console.log('[E2B] Sandbox created successfully (15 min timeout)', metadata);
+        console.log('[E2B] Sandbox created successfully with 24h timeout');
 
         // Action: Execute Python code
         if (action === 'execute') {
             console.log('[E2B] Executing Python code:', code?.substring(0, 100));
+
+            if (!code) {
+                return res.status(200).json({
+                    success: false,
+                    output: 'No code provided',
+                    error: 'Missing code parameter',
+                    files: []
+                });
+            }
 
             // Run Python code using runCode method
             const execution = await sandbox.runCode(code);
@@ -71,6 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     success: false,
                     output: stderr || stdout,
                     error: `${execution.error.name}: ${execution.error.value}`,
+                    files: []
                 });
             }
 
@@ -78,18 +111,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             let files: any[] = [];
 
             // Parse code for file paths (e.g., open('/home/user/hello.py', 'w'))
-            const fileMatches = code.match(/open\s*\(\s*['"](\/home\/user\/[^'"]+)['"]/g);
+            const fileMatches = code.match(/open\s*\(\s*['"]([^'"]+)['"]/g);
             if (fileMatches) {
                 for (const match of fileMatches) {
                     const pathMatch = match.match(/['"]([^'"]+)['"]/);
                     if (pathMatch) {
                         const filePath = pathMatch[1];
-                        const fileName = filePath.split('/').pop() || '';
-                        files.push({
-                            name: fileName,
-                            path: filePath,
-                            type: 'file'
-                        });
+                        // Only include if it's a write operation (look for 'w' mode)
+                        if (code.includes(`open('${filePath}', 'w')`) ||
+                            code.includes(`open("${filePath}", "w")`) ||
+                            code.includes(`open('${filePath}', "w")`) ||
+                            code.includes(`open("${filePath}", 'w')`)) {
+                            const fileName = filePath.split('/').pop() || '';
+                            files.push({
+                                name: fileName,
+                                path: filePath,
+                                type: 'file'
+                            });
+                        }
                     }
                 }
             }
@@ -106,8 +145,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             path: `/home/user/${file.name}`,
                             type: 'file'
                         }));
-                } catch (e) {
-                    console.warn('[E2B] Could not list files:', e);
+                } catch (listError) {
+                    console.warn('[E2B] Could not list files:', listError);
                 }
             }
 
@@ -137,6 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 output,
                 exitCode: result.exitCode,
                 error: result.exitCode !== 0 ? result.stderr : null,
+                files: []
             });
         }
 
@@ -148,7 +188,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 success: true,
-                message: `File written to ${filepath}`
+                message: `File written to ${filepath}`,
+                files: [{ name: filepath.split('/').pop(), path: filepath, type: 'file' }]
             });
         }
 
@@ -162,7 +203,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({
                 success: true,
                 content: String(fileContent),
-                filename
+                filename,
+                files: []
             });
         }
 
@@ -171,11 +213,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const dir = filepath || '/home/user';
             console.log('[E2B] Listing files in:', dir);
 
-            const files = await sandbox.files.list(dir);
+            const filesList = await sandbox.files.list(dir);
 
             return res.status(200).json({
                 success: true,
-                files: files.map((f: any) => ({
+                files: filesList.map((f: any) => ({
                     name: f.name,
                     path: `${dir}/${f.name}`,
                     type: f.type || 'file'
@@ -183,22 +225,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
-        return res.status(400).json({
-            error: 'Invalid action. Use: execute (Python), command (shell), write_file, read_file, list_files'
+        return res.status(200).json({
+            success: false,
+            error: 'Invalid action. Use: execute (Python), command (shell), write_file, read_file, list_files',
+            files: []
         });
 
     } catch (error: any) {
         console.error('[E2B] Sandbox error:', error.message);
         console.error('[E2B] Full error:', error);
-        return res.status(500).json({
+
+        // ALWAYS return valid JSON even on errors
+        return res.status(200).json({
             success: false,
-            error: error.message || 'Sandbox execution failed'
+            output: '',
+            error: error.message || 'Sandbox execution failed',
+            files: []
         });
     } finally {
         // Always close sandbox (per E2B docs)
         if (sandbox) {
             console.log('[E2B] Closing sandbox...');
-            await sandbox.kill();
+            try {
+                await sandbox.kill();
+            } catch (killError) {
+                console.error('[E2B] Error closing sandbox:', killError);
+            }
         }
     }
 }
