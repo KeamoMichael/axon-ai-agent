@@ -38,9 +38,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         console.log('[E2B] Creating sandbox...');
 
-        // Create a new sandbox session (E2B reads API key from env automatically)
-        sandbox = await Sandbox.create();
-        console.log('[E2B] Sandbox created successfully');
+        // Create a new sandbox session with 15 minute timeout for agentic usage
+        // E2B reads API key from env automatically
+        sandbox = await Sandbox.create({
+            timeoutMs: 15 * 60 * 1000  // 15 minutes for complex agentic tasks
+        });
+        console.log('[E2B] Sandbox created successfully (15 min timeout)');
 
         // Action: Execute Python code
         if (action === 'execute') {
