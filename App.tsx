@@ -172,43 +172,6 @@ const App: React.FC = () => {
             }, 2000);
             return;
 
-          case 'web_search':
-            const { query } = call.args as any;
-            addLog(`Searching: ${query}`, 'tool');
-            setCurrentSteps(prev => {
-              let targetIndex = prev.findIndex(s => s.status === 'active');
-              if (targetIndex === -1) targetIndex = prev.findIndex(s => s.status === 'pending');
-
-              if (targetIndex !== -1) {
-                const updated = [...prev];
-                const s = updated[targetIndex];
-                const newLog: AgentLog = {
-                  id: Date.now().toString(),
-                  timestamp: new Date(),
-                  type: 'tool',
-                  message: `Searching for ${query}`,
-                  toolData: { tool: 'search', query }
-                };
-                updated[targetIndex] = {
-                  ...s,
-                  status: 'active',
-                  searchQuery: query,
-                  toolInput: { type: 'typing', value: query },
-                  logs: [...(s.logs || []), newLog]
-                } as PlanStep;
-                updateLastAssistantMessage({ steps: updated });
-                return updated;
-              }
-              return prev;
-            });
-            setTimeout(async () => {
-              // Initial mock response for search to keep flow going
-              const nextResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
-                content: `Found several results for "${query}". Top results include official documentation and recent articles.`
-              });
-              if (nextResp) await processResponse(nextResp);
-            }, 1000);
-            return;
 
           case 'execute_terminal':
             const { command } = call.args as any;
