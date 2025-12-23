@@ -1,8 +1,14 @@
 
 import { GoogleGenAI, Type, FunctionDeclaration, GenerateContentResponse } from "@google/genai";
 
-// Fix: Correct initialization using named parameter and process.env.API_KEY directly
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Get API key from environment variables
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+// Initialize AI only if API key is available
+let ai: GoogleGenAI | null = null;
+if (apiKey) {
+  ai = new GoogleGenAI({ apiKey });
+}
 
 const browseUrl: FunctionDeclaration = {
   name: "browse_url",
@@ -81,26 +87,41 @@ Be concise. Don't explain your tools to the user; just use them.
 `;
 
 export class GeminiAgent {
-  private chat;
+  private chat: any;
+  private isAvailable: boolean;
 
   constructor() {
-    this.chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
-      config: {
-        systemInstruction,
-        tools: [
-          { functionDeclarations: [browseUrl, executeTerminal, createPlan, updateStatus] },
-          { googleSearch: {} }
-        ]
-      }
-    });
+    this.isAvailable = ai !== null;
+    
+    if (ai) {
+      this.chat = ai.chats.create({
+        model: 'gemini-2.0-flash',
+        config: {
+          systemInstruction,
+          tools: [
+            { functionDeclarations: [browseUrl, executeTerminal, createPlan, updateStatus] },
+            { googleSearch: {} }
+          ]
+        }
+      });
+    }
+  }
+
+  isApiConfigured(): boolean {
+    return this.isAvailable;
   }
 
   async sendMessage(message: string): Promise<GenerateContentResponse> {
+    if (!this.isAvailable || !this.chat) {
+      throw new Error("API key not configured. Please add GEMINI_API_KEY to your environment variables.");
+    }
     return await this.chat.sendMessage({ message });
   }
 
   async sendToolResponse(callId: string, name: string, response: any): Promise<GenerateContentResponse> {
+    if (!this.isAvailable || !this.chat) {
+      throw new Error("API key not configured. Please add GEMINI_API_KEY to your environment variables.");
+    }
     const result = JSON.stringify(response);
     return await this.chat.sendMessage({ message: `TOOL_RESULT [${name}]: ${result}` });
   }
