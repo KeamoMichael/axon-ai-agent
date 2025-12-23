@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Sandbox } from '@e2b/code-interpreter';
 
 // E2B Code Sandbox API endpoint
-// Get your API key at: https://e2b.dev/
+// Reference: https://e2b.dev/docs
 // Set E2B_API_KEY environment variable in Vercel
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -19,13 +19,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { action, code } = req.body;
+    const { action, code, filepath, content } = req.body;
 
     // E2B reads API key from E2B_API_KEY environment variable automatically
     const E2B_API_KEY = process.env.E2B_API_KEY;
 
     if (!E2B_API_KEY) {
-        console.error('E2B_API_KEY not configured');
+        console.error('[E2B] E2B_API_KEY not configured');
         return res.status(200).json({
             success: false,
             output: 'E2B_API_KEY not configured. Please add it to Vercel environment variables.',
@@ -42,26 +42,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sandbox = await Sandbox.create();
         console.log('[E2B] Sandbox created successfully');
 
+        // Action: Execute Python code
         if (action === 'execute') {
-            console.log('[E2B] Executing code:', code);
+            console.log('[E2B] Executing Python code:', code?.substring(0, 100));
 
             // Run Python code using runCode method
             const execution = await sandbox.runCode(code);
 
-            console.log('[E2B] Execution result:', execution.logs);
-
             // Get output from logs
-            const stdout = execution.logs.stdout.join('\n');
-            const stderr = execution.logs.stderr.join('\n');
-            const output = stdout || stderr || execution.text || '';
+            const stdout = execution.logs?.stdout?.join('\n') || '';
+            const stderr = execution.logs?.stderr?.join('\n') || '';
+            const output = stdout || execution.text || '';
+
+            console.log('[E2B] Execution stdout:', stdout);
+            console.log('[E2B] Execution stderr:', stderr);
 
             // Check for errors
             if (execution.error) {
                 console.error('[E2B] Execution error:', execution.error);
                 return res.status(200).json({
                     success: false,
-                    output: stderr,
-                    error: execution.error.name + ': ' + execution.error.value,
+                    output: stderr || stdout,
+                    error: `${execution.error.name}: ${execution.error.value}`,
                 });
             }
 
@@ -71,10 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const fileList = await sandbox.files.list('/home/user');
                 files = fileList.map((file: any) => ({
                     name: file.name,
-                    path: file.path,
-                    type: file.type
+                    path: `/home/user/${file.name}`,
+                    type: file.type || 'file'
                 }));
-                console.log('[E2B] Files:', files);
+                console.log('[E2B] Files in sandbox:', files);
             } catch (e) {
                 console.warn('[E2B] Could not list files:', e);
             }
@@ -86,44 +88,85 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
-        if (action === 'download') {
-            const { filepath } = req.body;
-            const content = await sandbox.files.read(filepath);
+        // Action: Run shell command  
+        if (action === 'command') {
+            console.log('[E2B] Running shell command:', code);
+
+            // Use commands.run() for shell commands
+            const result = await sandbox.commands.run(code);
+            const output = result.stdout || result.stderr || 'Command executed';
+
+            console.log('[E2B] Command stdout:', result.stdout);
+            console.log('[E2B] Command stderr:', result.stderr);
+            console.log('[E2B] Exit code:', result.exitCode);
+
+            return res.status(200).json({
+                success: result.exitCode === 0,
+                output,
+                exitCode: result.exitCode,
+                error: result.exitCode !== 0 ? result.stderr : null,
+            });
+        }
+
+        // Action: Write file to sandbox
+        if (action === 'write_file') {
+            console.log('[E2B] Writing file:', filepath);
+
+            await sandbox.files.write(filepath, content);
+
+            return res.status(200).json({
+                success: true,
+                message: `File written to ${filepath}`
+            });
+        }
+
+        // Action: Read file from sandbox
+        if (action === 'read_file' || action === 'download') {
+            console.log('[E2B] Reading file:', filepath);
+
+            const fileContent = await sandbox.files.read(filepath);
             const filename = filepath.split('/').pop();
 
             return res.status(200).json({
                 success: true,
-                content: content.toString(),
+                content: typeof fileContent === 'string' ? fileContent : fileContent.toString(),
                 filename
             });
         }
 
+        // Action: List files in directory
         if (action === 'list_files') {
-            const files = await sandbox.files.list('/home/user');
+            const dir = filepath || '/home/user';
+            console.log('[E2B] Listing files in:', dir);
+
+            const files = await sandbox.files.list(dir);
 
             return res.status(200).json({
                 success: true,
                 files: files.map((f: any) => ({
                     name: f.name,
-                    path: f.path,
-                    type: f.type
+                    path: `${dir}/${f.name}`,
+                    type: f.type || 'file'
                 }))
             });
         }
 
-        return res.status(400).json({ error: 'Invalid action. Use: execute, download, or list_files' });
+        return res.status(400).json({
+            error: 'Invalid action. Use: execute (Python), command (shell), write_file, read_file, list_files'
+        });
 
     } catch (error: any) {
-        console.error('[E2B] Sandbox error:', error);
+        console.error('[E2B] Sandbox error:', error.message);
+        console.error('[E2B] Full error:', error);
         return res.status(500).json({
             success: false,
             error: error.message || 'Sandbox execution failed'
         });
     } finally {
-        // Always close sandbox
+        // Always close sandbox (per E2B docs)
         if (sandbox) {
             console.log('[E2B] Closing sandbox...');
-            await sandbox.kill();
+            await sandbox.close();
         }
     }
 }
