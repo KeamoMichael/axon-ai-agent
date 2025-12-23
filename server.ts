@@ -67,7 +67,7 @@ app.post('/api/sandbox', async (req, res) => {
         console.log('[E2B] Creating sandbox...');
 
         sandbox = await Sandbox.create({
-            timeoutMs: 24 * 60 * 60 * 1000, // 24 hours
+            timeoutMs: 5 * 60 * 1000, // 5 minutes - safe timeout for E2B
             metadata: {
                 sessionId: metadata?.sessionId || 'anonymous',
                 timestamp: new Date().toISOString(),
