@@ -140,25 +140,29 @@ const App: React.FC = () => {
             setWorkspace(prev => ({ ...prev, view: 'browser', url }));
             addLog(`Browsing: ${url}`, 'tool');
             setCurrentSteps(prev => {
-              const updated = prev.map(s => {
-                if (s.status === 'active') {
-                  const newLog: AgentLog = {
-                    id: Date.now().toString(),
-                    timestamp: new Date(),
-                    type: 'tool',
-                    message: `Browsing ${url}`,
-                    toolData: { tool: 'browse', url }
-                  };
-                  return {
-                    ...s,
-                    toolInput: { type: 'browsing', value: url },
-                    logs: [...(s.logs || []), newLog]
-                  } as PlanStep;
-                }
-                return s;
-              });
-              updateLastAssistantMessage({ steps: updated });
-              return updated;
+              let targetIndex = prev.findIndex(s => s.status === 'active');
+              if (targetIndex === -1) targetIndex = prev.findIndex(s => s.status === 'pending');
+
+              if (targetIndex !== -1) {
+                const updated = [...prev];
+                const s = updated[targetIndex];
+                const newLog: AgentLog = {
+                  id: Date.now().toString(),
+                  timestamp: new Date(),
+                  type: 'tool',
+                  message: `Browsing ${url}`,
+                  toolData: { tool: 'browse', url }
+                };
+                updated[targetIndex] = {
+                  ...s,
+                  status: 'active',
+                  toolInput: { type: 'browsing', value: url },
+                  logs: [...(s.logs || []), newLog]
+                } as PlanStep;
+                updateLastAssistantMessage({ steps: updated });
+                return updated;
+              }
+              return prev;
             });
             setTimeout(async () => {
               const nextResp = await agentRef.current?.sendToolResponse(call.id, call.name, { content: `Successfully parsed data from ${url}. Found relevant details for task.` });
@@ -170,26 +174,30 @@ const App: React.FC = () => {
             const { query } = call.args as any;
             addLog(`Searching: ${query}`, 'tool');
             setCurrentSteps(prev => {
-              const updated = prev.map(s => {
-                if (s.status === 'active') {
-                  const newLog: AgentLog = {
-                    id: Date.now().toString(),
-                    timestamp: new Date(),
-                    type: 'tool',
-                    message: `Searching for ${query}`,
-                    toolData: { tool: 'search', query }
-                  };
-                  return {
-                    ...s,
-                    searchQuery: query,
-                    toolInput: { type: 'typing', value: query },
-                    logs: [...(s.logs || []), newLog]
-                  } as PlanStep;
-                }
-                return s;
-              });
-              updateLastAssistantMessage({ steps: updated });
-              return updated;
+              let targetIndex = prev.findIndex(s => s.status === 'active');
+              if (targetIndex === -1) targetIndex = prev.findIndex(s => s.status === 'pending');
+
+              if (targetIndex !== -1) {
+                const updated = [...prev];
+                const s = updated[targetIndex];
+                const newLog: AgentLog = {
+                  id: Date.now().toString(),
+                  timestamp: new Date(),
+                  type: 'tool',
+                  message: `Searching for ${query}`,
+                  toolData: { tool: 'search', query }
+                };
+                updated[targetIndex] = {
+                  ...s,
+                  status: 'active',
+                  searchQuery: query,
+                  toolInput: { type: 'typing', value: query },
+                  logs: [...(s.logs || []), newLog]
+                } as PlanStep;
+                updateLastAssistantMessage({ steps: updated });
+                return updated;
+              }
+              return prev;
             });
             setTimeout(async () => {
               // Initial mock response for search to keep flow going
@@ -205,25 +213,29 @@ const App: React.FC = () => {
             setWorkspace(prev => ({ ...prev, view: 'terminal' }));
             addLog(`Executing command: ${command}`, 'tool');
             setCurrentSteps(prev => {
-              const updated = prev.map(s => {
-                if (s.status === 'active') {
-                  const newLog: AgentLog = {
-                    id: Date.now().toString(),
-                    timestamp: new Date(),
-                    type: 'tool',
-                    message: `Running command: ${command}`,
-                    toolData: { tool: 'terminal', command }
-                  };
-                  return {
-                    ...s,
-                    toolInput: { type: 'terminal', value: command },
-                    logs: [...(s.logs || []), newLog]
-                  } as PlanStep;
-                }
-                return s;
-              });
-              updateLastAssistantMessage({ steps: updated });
-              return updated;
+              let targetIndex = prev.findIndex(s => s.status === 'active');
+              if (targetIndex === -1) targetIndex = prev.findIndex(s => s.status === 'pending');
+
+              if (targetIndex !== -1) {
+                const updated = [...prev];
+                const s = updated[targetIndex];
+                const newLog: AgentLog = {
+                  id: Date.now().toString(),
+                  timestamp: new Date(),
+                  type: 'tool',
+                  message: `Running command: ${command}`,
+                  toolData: { tool: 'terminal', command }
+                };
+                updated[targetIndex] = {
+                  ...s,
+                  status: 'active',
+                  toolInput: { type: 'terminal', value: command },
+                  logs: [...(s.logs || []), newLog]
+                } as PlanStep;
+                updateLastAssistantMessage({ steps: updated });
+                return updated;
+              }
+              return prev;
             });
             setTimeout(async () => {
               await agentRef.current?.sendToolResponse(call.id, call.name, { output: "Command executed successfully. Output captured." });
