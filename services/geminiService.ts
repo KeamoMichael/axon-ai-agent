@@ -92,10 +92,10 @@ export class GeminiAgent {
 
   constructor() {
     this.isAvailable = ai !== null;
-    
+
     if (ai) {
       this.chat = ai.chats.create({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         config: {
           systemInstruction,
           tools: [
