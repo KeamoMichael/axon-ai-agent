@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@e2b/code-interpreter": "^2.3.3",
     "@google/genai": "^1.34.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"

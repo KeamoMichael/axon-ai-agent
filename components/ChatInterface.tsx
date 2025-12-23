@@ -727,26 +727,56 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       )}
 
                       {/* Process Footer inside message */}
-                      {msg.steps && msg.steps.length > 0 && (
-                        <div className="bg-[#f8f9fa] rounded-2xl p-4 flex items-center justify-between border border-gray-100/50 group cursor-pointer hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-1 opacity-60">
-                              <ICONS.Code />
+                      {msg.steps && msg.steps.length > 0 && (() => {
+                        const activeStepData = msg.steps.find(s => s.status === 'active') || msg.steps.find(s => s.status === 'pending');
+                        const getIcon = () => {
+                          if (!activeStepData) return <ICONS.Code />;
+
+                          switch (activeStepData.toolUsed) {
+                            case 'browse':
+                              return (
+                                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeWidth="2" d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path strokeWidth="2" d="M2 12h20" />
+                                </svg>
+                              );
+                            case 'search':
+                              return (
+                                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                                </svg>
+                              );
+                            case 'terminal':
+                              return (
+                                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                  <polyline points="4 17 10 11 4 5" /><line x1="12" x2="20" y1="19" y2="19" />
+                                </svg>
+                              );
+                            default:
+                              return <ICONS.Code />;
+                          }
+                        };
+
+                        return (
+                          <div className="bg-[#f8f9fa] rounded-2xl p-4 flex items-center justify-between border border-gray-100/50 group cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center gap-4 min-w-0">
+                              <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                                {getIcon()}
+                              </div>
+                              <h6 className="text-[15px] font-bold text-gray-900 truncate">
+                                {activeStepData?.title || "Planning..."}
+                              </h6>
                             </div>
-                            <h6 className="text-[15px] font-bold text-gray-900 truncate">
-                              {msg.steps.find(s => s.status === 'active')?.title || msg.steps.find(s => s.status === 'pending')?.title || "Planning..."}
-                            </h6>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0 ml-4">
-                            <span className="text-[14px] font-bold text-gray-300">
-                              {msg.steps.filter(s => s.status === 'completed').length}/{msg.steps.length}
-                            </span>
-                            <div className="text-gray-300 group-hover:text-gray-600 transition-colors">
-                              <ICONS.ChevronUp />
+                            <div className="flex items-center gap-3 shrink-0 ml-4">
+                              <span className="text-[14px] font-bold text-gray-300">
+                                {msg.steps.filter(s => s.status === 'completed').length}/{msg.steps.length}
+                              </span>
+                              <div className="text-gray-300 group-hover:text-gray-600 transition-colors">
+                                <ICONS.ChevronUp />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

@@ -60,6 +60,8 @@ const App: React.FC = () => {
   const [logs, setLogs] = useState<AgentLog[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState>({ view: 'browser' });
   const [isApiConfigured, setIsApiConfigured] = useState(true);
+  const [browserUrl, setBrowserUrl] = useState<string>('');
+  const [isBrowserActive, setIsBrowserActive] = useState(false);
 
   const agentRef = useRef<GeminiAgent | null>(null);
 
@@ -146,8 +148,10 @@ const App: React.FC = () => {
 
           case 'browse_url':
             const { url } = call.args as any;
-            setWorkspace(prev => ({ ...prev, view: 'browser', url }));
-            addLog(`Browsing: ${url}`, 'tool');
+            setWorkspace(prev => ({ ...prev, view: 'browser' }));
+            setBrowserUrl(url);
+            setIsBrowserActive(true);
+            addLog(`Browsing URL: ${url}`, 'tool');
             setCurrentSteps(prev => {
               let targetIndex = prev.findIndex(s => s.status === 'active');
               if (targetIndex === -1) targetIndex = prev.findIndex(s => s.status === 'pending');
@@ -165,6 +169,7 @@ const App: React.FC = () => {
                 updated[targetIndex] = {
                   ...s,
                   status: 'active',
+                  toolUsed: 'browse',
                   toolInput: { type: 'browsing', value: url },
                   logs: [...(s.logs || []), newLog]
                 } as PlanStep;
@@ -174,8 +179,9 @@ const App: React.FC = () => {
               return prev;
             });
             setTimeout(async () => {
-              const nextResp = await agentRef.current?.sendToolResponse(call.id, call.name, { content: `Successfully parsed data from ${url}. Found relevant details for task.` });
-              if (nextResp) await processResponse(nextResp);
+              const browseResp = await agentRef.current?.sendToolResponse(call.id, call.name, { content: `Successfully parsed data from ${url}. Found relevant details for task.` });
+              setIsBrowserActive(false);
+              if (browseResp) await processResponse(browseResp);
             }, 2000);
             return;
 
@@ -199,6 +205,7 @@ const App: React.FC = () => {
                 updated[targetIndex] = {
                   ...s,
                   status: 'active',
+                  toolUsed: 'search',
                   searchQuery: query,
                   toolInput: { type: 'typing', value: query },
                   logs: [...(s.logs || []), newLog]
@@ -262,6 +269,7 @@ const App: React.FC = () => {
                 updated[targetIndex] = {
                   ...s,
                   status: 'active',
+                  toolUsed: 'terminal',
                   toolInput: { type: 'terminal', value: command },
                   logs: [...(s.logs || []), newLog]
                 } as PlanStep;
@@ -270,10 +278,57 @@ const App: React.FC = () => {
               }
               return prev;
             });
-            setTimeout(async () => {
-              await agentRef.current?.sendToolResponse(call.id, call.name, { output: "Command executed successfully. Output captured." });
-            }, 1000);
-            break;
+            // Execute code in E2B sandbox
+            (async () => {
+              try {
+                const sandboxUrl = '/api/sandbox';
+                const sandboxResponse = await fetch(sandboxUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'execute',
+                    code: command,
+                    language: 'python' // Default to Python, can be detected from command
+                  })
+                });
+
+                const sandboxData = await sandboxResponse.json();
+
+                if (sandboxData.success) {
+                  const output = sandboxData.output || 'Command executed successfully';
+                  const files = sandboxData.files || [];
+
+                  addLog(`Output: ${output.substring(0, 200)}${output.length > 200 ? '...' : ''}`, 'success');
+
+                  if (files.length > 0) {
+                    addLog(`Generated ${files.length} file(s)`, 'success');
+                  }
+
+                  const terminalResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                    output,
+                    files: files.map((f: any) => f.name)
+                  });
+                  if (terminalResp) await processResponse(terminalResp);
+                } else {
+                  const error = sandboxData.error || 'Execution failed';
+                  addLog(`Error: ${error}`, 'error');
+
+                  const errorResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                    error
+                  });
+                  if (errorResp) await processResponse(errorResp);
+                }
+              } catch (error: any) {
+                console.error('Sandbox execution error:', error);
+                addLog(`Sandbox error: ${error.message}`, 'error');
+
+                const fallbackResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                  output: 'Command executed (sandbox unavailable)'
+                });
+                if (fallbackResp) await processResponse(fallbackResp);
+              }
+            })();
+            return;
         }
       }
     } else if (text) {
@@ -386,7 +441,7 @@ const App: React.FC = () => {
           statusMessage={activeStep?.title || "Agent Workstation"}
           plan={currentSteps}
           logs={logs}
-          workspace={workspace}
+          workspace={{ ...workspace, url: browserUrl }}
           onClose={() => setIsWorkspaceExpanded(false)}
         />
       )}
