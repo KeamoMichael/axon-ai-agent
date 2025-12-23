@@ -1,14 +1,30 @@
 
 import { GoogleGenAI, Type, FunctionDeclaration, GenerateContentResponse } from "@google/genai";
 
-// Get API key from environment variables
+// Get API key from environment variables (for API key auth)
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
-// Initialize AI only if API key is available
+// Check if we have service account credentials
+const hasServiceAccount = typeof process !== 'undefined' && process.env?.GOOGLE_APPLICATION_CREDENTIALS;
+
+// Initialize AI - try API key first, then try auto-auth with service account
 let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
+try {
+  if (apiKey) {
+    // API key authentication
+    ai = new GoogleGenAI({ apiKey });
+  } else if (hasServiceAccount) {
+    // Service account authentication - SDK auto-detects from GOOGLE_APPLICATION_CREDENTIALS
+    ai = new GoogleGenAI({});
+  } else {
+    // Try to initialize without any credentials (for Vercel with env vars)
+    ai = new GoogleGenAI({});
+  }
+} catch (e) {
+  console.error('Failed to initialize GoogleGenAI:', e);
+  ai = null;
 }
+
 
 // Function declarations for agentic capabilities
 const createPlan: FunctionDeclaration = {
