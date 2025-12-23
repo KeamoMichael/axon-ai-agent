@@ -9,19 +9,26 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npx tsx server.ts",
+    "build:server": "tsc server.ts --esModuleInterop --module nodenext --moduleResolution nodenext"
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.3.3",
     "@google/genai": "^1.34.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "express": "^4.21.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.14.0",
     "@vercel/node": "^2.3.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "tsx": "^4.19.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
