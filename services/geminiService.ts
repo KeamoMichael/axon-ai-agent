@@ -64,12 +64,12 @@ const browseUrl: FunctionDeclaration = {
 
 const executeTerminal: FunctionDeclaration = {
   name: "execute_terminal",
-  description: "Executes a command in a sandboxed terminal environment. Use for code execution, file operations, and system tasks.",
+  description: "Execute PYTHON CODE in a real E2B sandbox. This runs actual Python code and returns real output. Use this to create files, analyze data, or run Python scripts. Write Python code directly, NOT shell commands.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      command: { type: Type.STRING, description: "The shell command to execute" },
-      reason: { type: Type.STRING, description: "Why you are running this command" }
+      command: { type: Type.STRING, description: "PYTHON CODE to execute. Example: print('hello') OR with open('file.txt', 'w') as f: f.write('data')" },
+      reason: { type: Type.STRING, description: "Why you are running this code" }
     },
     required: ["command"]
   }
