@@ -13,18 +13,18 @@ if (apiKey) {
 // Function declarations for agentic capabilities
 const createPlan: FunctionDeclaration = {
   name: "create_plan",
-  description: "Creates a multi-step execution plan for the task. Call this first to outline your approach.",
+  description: "Creates a multi-step execution plan for the task. Call this FIRST to outline your approach before taking any actions.",
   parameters: {
     type: Type.OBJECT,
     properties: {
       steps: {
         type: Type.ARRAY,
-        description: "Array of plan steps",
+        description: "Array of plan steps to execute",
         items: {
           type: Type.OBJECT,
           properties: {
             id: { type: Type.STRING, description: "Unique step ID like step_1, step_2" },
-            title: { type: Type.STRING, description: "Short title for the step" },
+            title: { type: Type.STRING, description: "Short title describing the step" },
             description: { type: Type.STRING, description: "What this step will accomplish" }
           },
           required: ["id", "title"]
@@ -37,11 +37,11 @@ const createPlan: FunctionDeclaration = {
 
 const updateStatus: FunctionDeclaration = {
   name: "update_status",
-  description: "Updates the current status and active step. Call this when moving between steps.",
+  description: "Updates the current status and marks a step as active. Call this when starting or completing a step.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      message: { type: Type.STRING, description: "Current status message to display" },
+      message: { type: Type.STRING, description: "Current status message to display to the user" },
       activeStepId: { type: Type.STRING, description: "ID of the step currently being executed" },
       toolUsed: { type: Type.STRING, description: "Tool being used: 'search', 'browse', 'terminal', 'thinking'" }
     },
@@ -51,12 +51,12 @@ const updateStatus: FunctionDeclaration = {
 
 const browseUrl: FunctionDeclaration = {
   name: "browse_url",
-  description: "Navigates to a URL and extracts content. Use for specific websites.",
+  description: "Opens a URL in the browser to extract and analyze content from websites. Use for research and data gathering.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      url: { type: Type.STRING, description: "The URL to visit" },
-      reason: { type: Type.STRING, description: "Why visiting this URL" }
+      url: { type: Type.STRING, description: "The full URL to visit and extract content from" },
+      reason: { type: Type.STRING, description: "Why you are visiting this URL" }
     },
     required: ["url"]
   }
@@ -64,31 +64,56 @@ const browseUrl: FunctionDeclaration = {
 
 const executeTerminal: FunctionDeclaration = {
   name: "execute_terminal",
-  description: "Executes a terminal command for code or file operations.",
+  description: "Executes a command in a sandboxed terminal environment. Use for code execution, file operations, and system tasks.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      command: { type: Type.STRING, description: "The shell command to run" }
+      command: { type: Type.STRING, description: "The shell command to execute" },
+      reason: { type: Type.STRING, description: "Why you are running this command" }
     },
     required: ["command"]
   }
 };
 
-const systemInstruction = `You are Axon, an intelligent AI assistant that helps users with research and complex tasks.
+const webSearch: FunctionDeclaration = {
+  name: "web_search",
+  description: "Performs a web search to find current information on any topic. Use for research and fact-finding.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      query: { type: Type.STRING, description: "The search query" },
+      reason: { type: Type.STRING, description: "What information you're looking for" }
+    },
+    required: ["query"]
+  }
+};
 
-When responding to research requests:
-1. Use your search capabilities to find current information
-2. Synthesize the findings into clear, well-formatted responses
-3. Use bullet points and bold text for key insights
-4. Cite sources when providing factual information
+const systemInstruction = `You are Axon, an autonomous AI agent that executes complex tasks using tools.
 
-For other questions, provide helpful, accurate responses.
+## WORKFLOW
+For ANY task that requires research, analysis, or multi-step execution:
 
-Always format your responses using:
+1. FIRST call create_plan to outline 2-4 steps
+2. Call update_status when starting each step
+3. Use appropriate tools: web_search for research, browse_url for specific sites, execute_terminal for code
+4. Call update_status when completing steps
+5. Provide a well-formatted final response
+
+## TOOLS AVAILABLE
+- create_plan: Create execution plan (ALWAYS call first for complex tasks)
+- update_status: Update progress and mark steps active/complete
+- web_search: Search the web for information
+- browse_url: Visit and extract content from URLs
+- execute_terminal: Run commands in sandboxed environment
+
+## RESPONSE FORMAT
+Always format your final responses using:
 - **Bold** for key terms and important points
 - Numbered lists for steps or ranked items
 - Bullet points for features or characteristics
-- Clear paragraph breaks for readability`;
+- Clear paragraph breaks for readability
+
+Be concise and action-oriented. Execute tools, don't just describe what you would do.`;
 
 export class GeminiAgent {
   private chat: any;
@@ -103,7 +128,7 @@ export class GeminiAgent {
         config: {
           systemInstruction,
           tools: [
-            { googleSearch: {} }
+            { functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal, webSearch] }
           ]
         }
       });
