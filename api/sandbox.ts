@@ -74,19 +74,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            // List files in home directory
+            // Detect files created by the code
             let files: any[] = [];
-            try {
-                const fileList = await sandbox.files.list('/home/user');
-                files = fileList.map((file: any) => ({
-                    name: file.name,
-                    path: `/home/user/${file.name}`,
-                    type: file.type || 'file'
-                }));
-                console.log('[E2B] Files in sandbox:', files);
-            } catch (e) {
-                console.warn('[E2B] Could not list files:', e);
+
+            // Parse code for file paths (e.g., open('/home/user/hello.py', 'w'))
+            const fileMatches = code.match(/open\s*\(\s*['"](\/home\/user\/[^'"]+)['"]/g);
+            if (fileMatches) {
+                for (const match of fileMatches) {
+                    const pathMatch = match.match(/['"]([^'"]+)['"]/);
+                    if (pathMatch) {
+                        const filePath = pathMatch[1];
+                        const fileName = filePath.split('/').pop() || '';
+                        files.push({
+                            name: fileName,
+                            path: filePath,
+                            type: 'file'
+                        });
+                    }
+                }
             }
+
+            // Also list files from home directory if no explicit paths found
+            if (files.length === 0) {
+                try {
+                    const fileList = await sandbox.files.list('/home/user');
+                    // Filter to only include actual files (not system dirs)
+                    files = fileList
+                        .filter((f: any) => f.type === 'file')
+                        .map((file: any) => ({
+                            name: file.name,
+                            path: `/home/user/${file.name}`,
+                            type: 'file'
+                        }));
+                } catch (e) {
+                    console.warn('[E2B] Could not list files:', e);
+                }
+            }
+
+            console.log('[E2B] Files detected:', files);
 
             return res.status(200).json({
                 success: true,
