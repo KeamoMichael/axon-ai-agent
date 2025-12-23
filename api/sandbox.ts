@@ -132,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 success: true,
-                content: typeof fileContent === 'string' ? fileContent : fileContent.toString(),
+                content: String(fileContent),
                 filename
             });
         }
