@@ -108,8 +108,7 @@ export class GeminiAgent {
         config: {
           systemInstruction,
           tools: [
-            { functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal] },
-            { googleSearch: {} }
+            { functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal] }
           ]
         }
       });
