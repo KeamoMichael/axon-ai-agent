@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ICONS } from '../constants';
 import { ChatMessage, PlanStep, GeneratedFile } from '../types';
-import ComputerPreview from './ComputerPreview';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -726,21 +725,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                       )}
 
-                      {/* Computer Preview - show when browser or terminal is being used */}
-                      {msg.steps && msg.steps.some(s => s.status === 'active' && (s.toolUsed === 'browse' || s.toolUsed === 'terminal')) && (() => {
-                        const activeStep = msg.steps.find(s => s.status === 'active');
-                        return (
-                          <div className="my-4">
-                            <ComputerPreview
-                              isActive={true}
-                              currentAction={activeStep?.toolUsed === 'browse' ? 'Using Browser' : 'Running command'}
-                              browserUrl={activeStep?.toolUsed === 'browse' ? activeStep?.description : undefined}
-                              onTakeControl={() => console.log('Take control clicked')}
-                              onExpand={() => console.log('Expand clicked')}
-                            />
-                          </div>
-                        );
-                      })()}
 
                       {msg.content && (
                         <div className="text-[16px] font-medium text-[#2d3748] leading-relaxed max-w-[95%]">
@@ -1007,7 +991,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={startRecording} className="p-1 text-gray-400 hover:text-black transition-colors shrink-0"><ICONS.Mic /></button>
-                    <button onClick={() => handleSubmit()} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${input.trim() || files.length > 0 ? 'bg-black text-white' : 'bg-transparent text-gray-300'}`}>
+                    <button onClick={() => handleSubmit()} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isProcessing ? 'bg-black text-white' : input.trim() || files.length > 0 ? 'bg-black text-white' : 'bg-transparent text-gray-300'}`}>
                       {isProcessing ? <div className="w-3.5 h-3.5 bg-white rounded-sm"></div> : <ICONS.Send />}
                     </button>
                   </div>

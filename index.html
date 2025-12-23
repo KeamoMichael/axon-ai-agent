@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --brand: #000000;
@@ -15,6 +18,7 @@
             --bg: #fcfcfc;
             --border: #eeeeee;
         }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
@@ -22,56 +26,78 @@
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
+
         .display-font {
             font-family: 'Bricolage Grotesque', sans-serif;
             letter-spacing: -0.01em;
         }
+
         .logo-font {
             font-family: 'Bricolage Grotesque', sans-serif;
             font-weight: 700;
             letter-spacing: -0.03em;
         }
+
         .mono {
             font-family: 'JetBrains Mono', monospace;
         }
+
         ::-webkit-scrollbar {
             width: 0px;
         }
+
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
+
         .studio-card {
             background: #ffffff;
             border-radius: 0.5rem;
             border: 1px solid var(--border);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .studio-card:hover {
             border-color: #d1d1d1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+
         .main-container {
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
         }
+
         .sidebar-open .main-container {
             transform: scale(0.96);
             opacity: 0.3;
             pointer-events: none;
         }
+
         input:focus {
             outline: none;
         }
 
         /* Professional Entry Animations */
         @keyframes slide-up-reveal {
-            from { transform: translateY(12px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(12px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         @keyframes fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .animate-reveal {
@@ -83,27 +109,44 @@
         }
 
 
-        .stagger-1 { animation-delay: 0.05s; }
-        .stagger-2 { animation-delay: 0.1s; }
-        .stagger-3 { animation-delay: 0.15s; }
-        .stagger-4 { animation-delay: 0.2s; }
-        .stagger-5 { animation-delay: 0.25s; }
+        .stagger-1 {
+            animation-delay: 0.05s;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.15s;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.25s;
+        }
 
         /* ChatGPT-style shimmer effect for active steps */
         @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
         }
 
         .shimmer-text {
-            background: linear-gradient(
-                90deg,
-                #374151 0%,
-                #374151 35%,
-                #6b7280 50%,
-                #374151 65%,
-                #374151 100%
-            );
+            background: linear-gradient(90deg,
+                    #1f2937 0%,
+                    #1f2937 35%,
+                    #ffffff 50%,
+                    #1f2937 65%,
+                    #1f2937 100%);
             background-size: 200% 100%;
             -webkit-background-clip: text;
             background-clip: text;
@@ -111,7 +154,7 @@
             animation: shimmer 2s ease-in-out infinite;
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -122,10 +165,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="/index.css">
 </head>
+
 <body>
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
