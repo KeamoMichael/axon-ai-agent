@@ -289,7 +289,11 @@ const App: React.FC = () => {
                   body: JSON.stringify({
                     action: 'execute',
                     code: command,
-                    language: 'python' // Default to Python, can be detected from command
+                    language: 'python', // Default to Python
+                    metadata: {
+                      sessionId: currentSessionId || 'anonymous',
+                      timestamp: new Date().toISOString()
+                    }
                   })
                 });
 

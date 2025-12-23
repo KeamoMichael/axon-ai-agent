@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { action, code, filepath, content } = req.body;
+    const { action, code, filepath, content, metadata } = req.body;
 
     // E2B reads API key from E2B_API_KEY environment variable automatically
     const E2B_API_KEY = process.env.E2B_API_KEY;
@@ -38,12 +38,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         console.log('[E2B] Creating sandbox...');
 
-        // Create a new sandbox session with 15 minute timeout for agentic usage
+        // Create a new sandbox session with 15 minute timeout and metadata for tracking
         // E2B reads API key from env automatically
         sandbox = await Sandbox.create({
-            timeoutMs: 15 * 60 * 1000  // 15 minutes for complex agentic tasks
+            timeoutMs: 15 * 60 * 1000,  // 15 minutes for complex agentic tasks
+            metadata: metadata || {
+                sessionId: 'anonymous',
+                timestamp: new Date().toISOString()
+            }
         });
-        console.log('[E2B] Sandbox created successfully (15 min timeout)');
+        console.log('[E2B] Sandbox created successfully (15 min timeout)', metadata);
 
         // Action: Execute Python code
         if (action === 'execute') {
