@@ -166,7 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Always close sandbox (per E2B docs)
         if (sandbox) {
             console.log('[E2B] Closing sandbox...');
-            await sandbox.close();
+            await sandbox.kill();
         }
     }
 }
