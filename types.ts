@@ -24,6 +24,7 @@ export interface PlanStep {
     type: 'browsing' | 'typing' | 'terminal';
     value: string;
   };
+  logs?: AgentLog[];
 }
 
 export interface AgentLog {

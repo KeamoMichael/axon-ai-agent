@@ -108,14 +108,29 @@ const App: React.FC = () => {
             if (activeStepId) {
               setCurrentSteps(prevSteps => {
                 const updatedSteps = prevSteps.map(s => {
-                  if (s.id === activeStepId) return { ...s, status: 'active' as const, description: message, toolUsed: toolUsed || 'thinking' };
+                  if (s.id === activeStepId) {
+                    const newLog: AgentLog = {
+                      id: Date.now().toString(),
+                      timestamp: new Date(),
+                      type: toolUsed === 'thinking' ? 'info' : 'tool',
+                      message: message,
+                      toolData: { tool: toolUsed }
+                    };
+                    return {
+                      ...s,
+                      status: 'active' as const,
+                      description: message,
+                      toolUsed: toolUsed || 'thinking',
+                      logs: [...(s.logs || []), newLog]
+                    };
+                  }
                   if (s.status === 'active') return { ...s, status: 'completed' as const };
                   return s;
                 });
                 updateLastAssistantMessage({ steps: updatedSteps });
                 return updatedSteps;
               });
-              addLog(`Moving to step: ${activeStepId} - ${message}`, 'success');
+              addLog(`${message}`, 'success');
             }
             await agentRef.current?.sendToolResponse(call.id, call.name, { status: "updated" });
             break;
@@ -125,7 +140,23 @@ const App: React.FC = () => {
             setWorkspace(prev => ({ ...prev, view: 'browser', url }));
             addLog(`Browsing: ${url}`, 'tool');
             setCurrentSteps(prev => {
-              const updated = prev.map(s => s.status === 'active' ? { ...s, toolInput: { type: 'browsing', value: url } } as PlanStep : s);
+              const updated = prev.map(s => {
+                if (s.status === 'active') {
+                  const newLog: AgentLog = {
+                    id: Date.now().toString(),
+                    timestamp: new Date(),
+                    type: 'tool',
+                    message: `Browsing ${url}`,
+                    toolData: { tool: 'browse', url }
+                  };
+                  return {
+                    ...s,
+                    toolInput: { type: 'browsing', value: url },
+                    logs: [...(s.logs || []), newLog]
+                  } as PlanStep;
+                }
+                return s;
+              });
               updateLastAssistantMessage({ steps: updated });
               return updated;
             });
@@ -135,12 +166,62 @@ const App: React.FC = () => {
             }, 2000);
             return;
 
+          case 'web_search':
+            const { query } = call.args as any;
+            addLog(`Searching: ${query}`, 'tool');
+            setCurrentSteps(prev => {
+              const updated = prev.map(s => {
+                if (s.status === 'active') {
+                  const newLog: AgentLog = {
+                    id: Date.now().toString(),
+                    timestamp: new Date(),
+                    type: 'tool',
+                    message: `Searching for ${query}`,
+                    toolData: { tool: 'search', query }
+                  };
+                  return {
+                    ...s,
+                    searchQuery: query,
+                    toolInput: { type: 'typing', value: query },
+                    logs: [...(s.logs || []), newLog]
+                  } as PlanStep;
+                }
+                return s;
+              });
+              updateLastAssistantMessage({ steps: updated });
+              return updated;
+            });
+            setTimeout(async () => {
+              // Initial mock response for search to keep flow going
+              const nextResp = await agentRef.current?.sendToolResponse(call.id, call.name, {
+                content: `Found several results for "${query}". Top results include official documentation and recent articles.`
+              });
+              if (nextResp) await processResponse(nextResp);
+            }, 1000);
+            return;
+
           case 'execute_terminal':
             const { command } = call.args as any;
             setWorkspace(prev => ({ ...prev, view: 'terminal' }));
             addLog(`Executing command: ${command}`, 'tool');
             setCurrentSteps(prev => {
-              const updated = prev.map(s => s.status === 'active' ? { ...s, toolInput: { type: 'terminal', value: command } } as PlanStep : s);
+              const updated = prev.map(s => {
+                if (s.status === 'active') {
+                  const newLog: AgentLog = {
+                    id: Date.now().toString(),
+                    timestamp: new Date(),
+                    type: 'tool',
+                    message: `Running command: ${command}`,
+                    toolData: { tool: 'terminal', command }
+                  };
+                  return {
+                    ...s,
+                    toolInput: { type: 'terminal', value: command },
+                    logs: [...(s.logs || []), newLog]
+                  } as PlanStep;
+                }
+                return s;
+              });
               updateLastAssistantMessage({ steps: updated });
               return updated;
             });

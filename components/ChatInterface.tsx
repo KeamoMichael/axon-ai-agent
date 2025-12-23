@@ -672,6 +672,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   <span>{step.toolUsed === 'search' ? 'Searching' : step.toolUsed === 'browse' ? 'Using browser' : step.toolUsed === 'thinking' ? 'Thinking' : 'Processing'}</span>
                                 </div>
                               )}
+
+                              {/* Render Logs for Historical Steps */}
+                              {step.logs && step.logs.length > 0 && (
+                                <div className="ml-6 mt-2 space-y-1.5">
+                                  {step.logs.map((log) => (
+                                    <div key={log.id} className="flex items-start gap-2">
+                                      <div className="mt-0.5 text-gray-400 shrink-0">
+                                        {log.toolData?.tool === 'search' && <ICONS.Search />}
+                                        {log.toolData?.tool === 'browse' && <ICONS.Globe />}
+                                        {log.toolData?.tool === 'terminal' && <ICONS.Terminal />}
+                                      </div>
+                                      <span className="text-[13px] text-gray-600 leading-tight">{log.message}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -826,14 +842,46 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             {step.title}
                           </span>
                           {step.status === 'active' && (
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[12px] text-gray-400">{formatTime(elapsedSeconds)}</span>
-                              <span className="text-[12px] text-gray-400">
-                                {step.toolUsed === 'browse' ? 'Using browser' :
-                                  step.toolUsed === 'search' ? 'Searching' :
-                                    step.toolUsed === 'terminal' ? 'Running command' :
-                                      'Thinking'}
-                              </span>
+                            <div className="mt-1">
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[12px] text-gray-400">{formatTime(elapsedSeconds)}</span>
+                                <span className="text-[12px] text-gray-400">
+                                  {step.toolUsed === 'browse' ? 'Using browser' :
+                                    step.toolUsed === 'search' ? 'Searching' :
+                                      step.toolUsed === 'terminal' ? 'Running command' :
+                                        'Thinking'}
+                                </span>
+                              </div>
+                              {/* Streaming Logs for Active Step */}
+                              {step.logs && step.logs.length > 0 && (
+                                <div className="mt-2 space-y-1.5 pl-1">
+                                  {step.logs.slice(-5).map((log) => ( // Show last 5 logs for context
+                                    <div key={log.id} className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                      {log.toolData?.tool === 'search' && (
+                                        <div className="bg-gray-100 rounded px-1.5 py-0.5 flex items-center gap-1.5 border border-gray-200">
+                                          <ICONS.Search />
+                                          <span className="text-[12px] font-mono text-gray-600 truncate max-w-[200px]">{log.toolData.query}</span>
+                                        </div>
+                                      )}
+                                      {log.toolData?.tool === 'browse' && (
+                                        <div className="bg-gray-100 rounded px-1.5 py-0.5 flex items-center gap-1.5 border border-gray-200">
+                                          <ICONS.Globe />
+                                          <span className="text-[12px] font-mono text-gray-600 truncate max-w-[200px]">{log.toolData.url}</span>
+                                        </div>
+                                      )}
+                                      {log.toolData?.tool === 'terminal' && (
+                                        <div className="bg-gray-100 rounded px-1.5 py-0.5 flex items-center gap-1.5 border border-gray-200">
+                                          <ICONS.Terminal />
+                                          <span className="text-[12px] font-mono text-gray-600 truncate max-w-[200px]">{log.toolData.command}</span>
+                                        </div>
+                                      )}
+                                      {!['search', 'browse', 'terminal'].includes(log.toolData?.tool) && (
+                                        <span className="text-[13px] text-gray-500">{log.message}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
