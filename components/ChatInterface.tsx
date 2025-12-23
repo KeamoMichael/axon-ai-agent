@@ -726,11 +726,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-1 opacity-60">
                               <ICONS.Code />
                             </div>
-                            <div className="min-w-0">
-                              <h6 className="text-[15px] font-bold text-gray-900 truncate">
-                                {msg.steps.find(s => s.status === 'active')?.title || "Deliver the code to the user"}
-                              </h6>
-                            </div>
+                            <h6 className="text-[15px] font-bold text-gray-900 truncate">
+                              {msg.steps.find(s => s.status === 'active')?.title || msg.steps.find(s => s.status === 'pending')?.title || "Planning..."}
+                            </h6>
                           </div>
                           <div className="flex items-center gap-3 shrink-0 ml-4">
                             <span className="text-[14px] font-bold text-gray-300">

@@ -100,7 +100,8 @@ const App: React.FC = () => {
               if (last?.role === 'assistant') return [...prev.slice(0, -1), { ...last, steps: newSteps }];
               return [...prev, { id: Date.now().toString(), role: 'assistant', content: '', timestamp: new Date(), steps: newSteps }];
             });
-            await agentRef.current?.sendToolResponse(call.id, call.name, { success: true });
+            const planResponse = await agentRef.current?.sendToolResponse(call.id, call.name, { success: true });
+            if (planResponse) await processResponse(planResponse);
             break;
 
           case 'update_status':
@@ -132,7 +133,8 @@ const App: React.FC = () => {
               });
               addLog(`${message}`, 'success');
             }
-            await agentRef.current?.sendToolResponse(call.id, call.name, { status: "updated" });
+            const statusResponse = await agentRef.current?.sendToolResponse(call.id, call.name, { status: "updated" });
+            if (statusResponse) await processResponse(statusResponse);
             break;
 
           case 'browse_url':
