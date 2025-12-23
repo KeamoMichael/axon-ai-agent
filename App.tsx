@@ -347,6 +347,8 @@ const App: React.FC = () => {
     } else if (text) {
       // Use real sandbox files instead of mock files
       const realFiles = sandboxFiles.length > 0 ? sandboxFiles : [];
+      console.log('[DEBUG] sandboxFiles at response end:', sandboxFiles);
+      console.log('[DEBUG] realFiles to attach:', realFiles);
 
       setMessages(prev => {
         const last = prev[prev.length - 1];

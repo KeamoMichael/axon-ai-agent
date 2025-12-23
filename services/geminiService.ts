@@ -128,8 +128,9 @@ with open('/home/user/index.html', 'w') as f:
 CRITICAL RULES:
 1. ALWAYS write files to /home/user/ directory
 2. ALWAYS use Python code with execute_terminal (NOT shell commands!)
-3. NEVER say "I cannot create files" - you CAN and MUST
+3. NEVER say "I cannot create files" or "I cannot send files" - FILES ARE AUTOMATICALLY DOWNLOADABLE!
 4. NEVER just show code in markdown - EXECUTE it with execute_terminal
+5. When you create a file, it AUTOMATICALLY appears as a download button in chat - DO NOT tell user to use curl/wget!
 
 ## WHEN TO USE TOOLS vs JUST RESPOND
 
