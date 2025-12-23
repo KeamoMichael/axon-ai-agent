@@ -1,30 +1,14 @@
 
 import { GoogleGenAI, Type, FunctionDeclaration, GenerateContentResponse } from "@google/genai";
 
-// Get API key from environment variables (for API key auth)
+// Get API key from environment variables
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
-// Check if we have service account credentials
-const hasServiceAccount = typeof process !== 'undefined' && process.env?.GOOGLE_APPLICATION_CREDENTIALS;
-
-// Initialize AI - try API key first, then try auto-auth with service account
+// Initialize AI only if API key is available
 let ai: GoogleGenAI | null = null;
-try {
-  if (apiKey) {
-    // API key authentication
-    ai = new GoogleGenAI({ apiKey });
-  } else if (hasServiceAccount) {
-    // Service account authentication - SDK auto-detects from GOOGLE_APPLICATION_CREDENTIALS
-    ai = new GoogleGenAI({});
-  } else {
-    // Try to initialize without any credentials (for Vercel with env vars)
-    ai = new GoogleGenAI({});
-  }
-} catch (e) {
-  console.error('Failed to initialize GoogleGenAI:', e);
-  ai = null;
+if (apiKey) {
+  ai = new GoogleGenAI({ apiKey });
 }
-
 
 // Function declarations for agentic capabilities
 const createPlan: FunctionDeclaration = {
@@ -90,26 +74,21 @@ const executeTerminal: FunctionDeclaration = {
   }
 };
 
-const systemInstruction = `You are Axon, an autonomous AI agent that executes complex tasks.
+const systemInstruction = `You are Axon, an intelligent AI assistant that helps users with research and complex tasks.
 
-CRITICAL WORKFLOW - You MUST follow this exact sequence:
+When responding to research requests:
+1. Use your search capabilities to find current information
+2. Synthesize the findings into clear, well-formatted responses
+3. Use bullet points and bold text for key insights
+4. Cite sources when providing factual information
 
-1. ALWAYS start by calling create_plan with 2-4 clear steps
-2. Call update_status with activeStepId and toolUsed before each action
-3. Use googleSearch for research, browse_url for specific sites
-4. Call update_status again when completing each step
-5. Provide a clean, formatted final response
+For other questions, provide helpful, accurate responses.
 
-Example flow:
-- User asks for research on a topic
-- Call create_plan with steps: [{"id": "step_1", "title": "Research topic"}, {"id": "step_2", "title": "Analyze findings"}, {"id": "step_3", "title": "Deliver insights"}]
-- Call update_status with activeStepId="step_1", toolUsed="search", message="Searching..."
-- Use googleSearch
-- Call update_status with activeStepId="step_2", toolUsed="thinking", message="Analyzing..."
-- Call update_status with activeStepId="step_3", message="Delivering results"
-- Provide formatted response
-
-Be concise. Execute tools, don't explain them.`;
+Always format your responses using:
+- **Bold** for key terms and important points
+- Numbered lists for steps or ranked items
+- Bullet points for features or characteristics
+- Clear paragraph breaks for readability`;
 
 export class GeminiAgent {
   private chat: any;
@@ -124,7 +103,7 @@ export class GeminiAgent {
         config: {
           systemInstruction,
           tools: [
-            { functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal] }
+            { googleSearch: {} }
           ]
         }
       });
