@@ -95,11 +95,10 @@ export class GeminiAgent {
 
     if (ai) {
       this.chat = ai.chats.create({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         config: {
           systemInstruction,
           tools: [
-            { functionDeclarations: [browseUrl, executeTerminal, createPlan, updateStatus] },
             { googleSearch: {} }
           ]
         }
