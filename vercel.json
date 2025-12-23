@@ -1,3 +1,4 @@
+```json
 {
     "buildCommand": "npm run build",
     "framework": "vite",
@@ -6,10 +7,6 @@
             "source": "/api/(.*)",
             "destination": "/api/$1"
         }
-    ],
-    "functions": {
-        "api/search.ts": {
-            "runtime": "@vercel/node@3.0.0"
-        }
-    }
+    ]
 }
+```
