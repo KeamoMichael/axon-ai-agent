@@ -282,7 +282,7 @@ const App: React.FC = () => {
             // Execute code in E2B sandbox
             (async () => {
               try {
-                const sandboxUrl = '/api/sandbox';
+                const sandboxUrl = 'https://axon-ai-agent.onrender.com/api/sandbox';
                 const sandboxResponse = await fetch(sandboxUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
