@@ -1,2 +1,30 @@
 /* Main stylesheet for Axon AI Agent */
-/* Additional styles can be added here */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ChatGPT-style shimmer effect for active steps */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #374151 0%,
+    #374151 35%,
+    #6b7280 50%,
+    #374151 65%,
+    #374151 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s ease-in-out infinite;
+}

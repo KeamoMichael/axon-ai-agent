@@ -332,7 +332,7 @@ const InlinePlanningStep: React.FC<{
             </svg>
           )}
         </div>
-        <span className={`text-[15px] font-semibold flex-1 ${step.status === 'pending' ? 'text-gray-400' : 'text-gray-800'
+        <span className={`text-[15px] font-semibold flex-1 ${step.status === 'pending' ? 'text-gray-400' : step.status === 'active' ? 'shimmer-text' : 'text-gray-800'
           }`}>
           {step.title}
         </span>
