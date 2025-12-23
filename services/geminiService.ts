@@ -104,7 +104,7 @@ export class GeminiAgent {
 
     if (ai) {
       this.chat = ai.chats.create({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-1.5-flash',
         config: {
           systemInstruction,
           tools: [
