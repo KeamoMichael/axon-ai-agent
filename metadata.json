@@ -1,0 +1,8 @@
+{
+  "name": "Axon AI Replica",
+  "description": "A high-end autonomous AI agent interface featuring real-time planning, tool execution visualization, and a sleek light-mode workspace aesthetic inspired by Axon AI.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
