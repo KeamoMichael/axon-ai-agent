@@ -10,45 +10,22 @@ if (apiKey) {
   ai = new GoogleGenAI({ apiKey });
 }
 
-const browseUrl: FunctionDeclaration = {
-  name: "browse_url",
-  parameters: {
-    type: Type.OBJECT,
-    description: "Navigates to a specific URL and returns page content.",
-    properties: {
-      url: { type: Type.STRING, description: "The URL to visit" },
-      reason: { type: Type.STRING, description: "Why we are visiting this URL" }
-    },
-    required: ["url"]
-  }
-};
-
-const executeTerminal: FunctionDeclaration = {
-  name: "execute_terminal",
-  parameters: {
-    type: Type.OBJECT,
-    description: "Executes a command in the terminal for file operations or code execution.",
-    properties: {
-      command: { type: Type.STRING, description: "The shell command to run" }
-    },
-    required: ["command"]
-  }
-};
-
+// Function declarations for agentic capabilities
 const createPlan: FunctionDeclaration = {
   name: "create_plan",
+  description: "Creates a multi-step execution plan for the task. Call this first to outline your approach.",
   parameters: {
     type: Type.OBJECT,
-    description: "Defines the multi-step plan the agent will follow.",
     properties: {
       steps: {
         type: Type.ARRAY,
+        description: "Array of plan steps",
         items: {
           type: Type.OBJECT,
           properties: {
-            id: { type: Type.STRING },
-            title: { type: Type.STRING },
-            description: { type: Type.STRING }
+            id: { type: Type.STRING, description: "Unique step ID like step_1, step_2" },
+            title: { type: Type.STRING, description: "Short title for the step" },
+            description: { type: Type.STRING, description: "What this step will accomplish" }
           },
           required: ["id", "title"]
         }
@@ -60,31 +37,63 @@ const createPlan: FunctionDeclaration = {
 
 const updateStatus: FunctionDeclaration = {
   name: "update_status",
+  description: "Updates the current status and active step. Call this when moving between steps.",
   parameters: {
     type: Type.OBJECT,
-    description: "Updates the current status of the agent's work.",
     properties: {
-      message: { type: Type.STRING, description: "A status message for the user" },
-      activeStepId: { type: Type.STRING, description: "ID of the current plan step being executed" }
+      message: { type: Type.STRING, description: "Current status message to display" },
+      activeStepId: { type: Type.STRING, description: "ID of the step currently being executed" },
+      toolUsed: { type: Type.STRING, description: "Tool being used: 'search', 'browse', 'terminal', 'thinking'" }
     },
     required: ["message"]
   }
 };
 
-const systemInstruction = `
-You are Axon, the world's first truly autonomous AI agent. 
-You solve complex tasks by browsing the web, executing code, and creating structured plans.
-Your interface is light, modern, and high-end. 
+const browseUrl: FunctionDeclaration = {
+  name: "browse_url",
+  description: "Navigates to a URL and extracts content. Use for specific websites.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      url: { type: Type.STRING, description: "The URL to visit" },
+      reason: { type: Type.STRING, description: "Why visiting this URL" }
+    },
+    required: ["url"]
+  }
+};
 
-STRICT WORKFLOW:
-1. Greet the user and immediately use 'create_plan' to outline how you'll solve their request.
-2. Use 'update_status' to keep the user informed of which step you are on.
-3. Use 'googleSearch' for general knowledge or 'browse_url' for specific sites.
-4. If code is needed, use 'execute_terminal'.
-5. Always synthesize findings into a clean, professional final response.
+const executeTerminal: FunctionDeclaration = {
+  name: "execute_terminal",
+  description: "Executes a terminal command for code or file operations.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      command: { type: Type.STRING, description: "The shell command to run" }
+    },
+    required: ["command"]
+  }
+};
 
-Be concise. Don't explain your tools to the user; just use them.
-`;
+const systemInstruction = `You are Axon, an autonomous AI agent that executes complex tasks.
+
+CRITICAL WORKFLOW - You MUST follow this exact sequence:
+
+1. ALWAYS start by calling create_plan with 2-4 clear steps
+2. Call update_status with activeStepId and toolUsed before each action
+3. Use googleSearch for research, browse_url for specific sites
+4. Call update_status again when completing each step
+5. Provide a clean, formatted final response
+
+Example flow:
+- User asks for research on a topic
+- Call create_plan with steps: ["Research topic", "Analyze findings", "Deliver insights"]
+- Call update_status with activeStepId="step_1", toolUsed="search", message="Searching..."
+- Use googleSearch
+- Call update_status with activeStepId="step_2", toolUsed="thinking", message="Analyzing..."
+- Call update_status with activeStepId="step_3", message="Delivering results"
+- Provide formatted response
+
+Be concise. Execute tools, don't explain them.`;
 
 export class GeminiAgent {
   private chat: any;
@@ -99,6 +108,9 @@ export class GeminiAgent {
         config: {
           systemInstruction,
           tools: [
+            {
+              functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal]
+            },
             { googleSearch: {} }
           ]
         }

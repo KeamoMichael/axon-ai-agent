@@ -18,6 +18,8 @@ export interface PlanStep {
   title: string;
   status: 'pending' | 'active' | 'completed' | 'failed';
   description?: string;
+  toolUsed?: 'search' | 'browse' | 'terminal' | 'thinking';
+  searchQuery?: string;
   toolInput?: {
     type: 'browsing' | 'typing' | 'terminal';
     value: string;

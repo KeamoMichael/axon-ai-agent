@@ -242,6 +242,114 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   );
 };
 
+// Inline Planning Step Component (Manus-style)
+const InlinePlanningStep: React.FC<{
+  step: PlanStep;
+  isExpanded: boolean;
+  onToggle: () => void;
+  elapsedTime?: string;
+}> = ({ step, isExpanded, onToggle, elapsedTime }) => {
+  const getToolIcon = () => {
+    switch (step.toolUsed) {
+      case 'search':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+          </svg>
+        );
+      case 'browse':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" />
+          </svg>
+        );
+      case 'terminal':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="4 17 10 11 4 5" /><line x1="12" x2="20" y1="19" y2="19" />
+          </svg>
+        );
+      default:
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+          </svg>
+        );
+    }
+  };
+
+  const getToolLabel = () => {
+    switch (step.toolUsed) {
+      case 'search': return 'Searching';
+      case 'browse': return 'Using browser';
+      case 'terminal': return 'Running command';
+      case 'thinking': return 'Thinking';
+      default: return 'Processing';
+    }
+  };
+
+  return (
+    <div className="my-4">
+      {/* Step Header - Expandable */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 text-left group"
+      >
+        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${step.status === 'completed' ? 'border-green-500 bg-green-500' :
+          step.status === 'active' ? 'border-blue-500 bg-blue-500' :
+            'border-gray-300'
+          }`}>
+          {step.status === 'completed' && (
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </div>
+        <span className={`text-[15px] font-semibold flex-1 ${step.status === 'pending' ? 'text-gray-400' : 'text-gray-800'
+          }`}>
+          {step.title}
+        </span>
+        <div className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="ml-6 mt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Description */}
+          {step.description && (
+            <p className="text-[14px] text-gray-500 leading-relaxed">
+              {step.description}
+            </p>
+          )}
+
+          {/* Search/Tool Query Indicator */}
+          {step.searchQuery && (
+            <div className="flex items-center gap-2 bg-[#f8f9fa] rounded-lg px-3 py-2 border border-gray-100">
+              <div className="text-gray-400">{getToolIcon()}</div>
+              <code className="text-[13px] text-gray-600 font-mono truncate flex-1">
+                {step.searchQuery}
+              </code>
+            </div>
+          )}
+
+          {/* Active Status Indicator */}
+          {step.status === 'active' && (
+            <div className="flex items-center gap-2 text-[14px] text-gray-500">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <span>{getToolLabel()}</span>
+              {elapsedTime && <span className="text-gray-400">· {elapsedTime}</span>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
@@ -409,7 +517,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const completedStepsCount = steps.filter(s => s.status === 'completed').length;
-  const totalSteps = steps.length || 2;
+  const totalSteps = steps.length || 0;
+  // Only show floating card for agentic tasks (when there are actual steps with tool usage)
+  const hasAgenticTask = isProcessing && steps.length > 0 && steps.some(s => s.toolUsed);
+  const activeAgenticStep = steps.find(s => s.status === 'active');
+
 
   return (
     <div className="flex flex-col h-full bg-white w-full relative">
@@ -516,6 +628,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         <span className="bg-[#f4f4f5] text-[10px] font-bold text-gray-400 px-1.5 py-0.5 rounded border border-gray-100">Lite</span>
                       </div>
 
+                      {/* Inline Planning Steps - show before content if there are steps */}
+                      {msg.steps && msg.steps.length > 0 && (
+                        <div className="my-4 border-l-2 border-gray-100 pl-4">
+                          {msg.steps.map((step, idx) => (
+                            <div key={step.id} className="mb-3 last:mb-0">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${step.status === 'completed' ? 'border-green-500 bg-green-500' :
+                                  step.status === 'active' ? 'border-blue-500 bg-blue-500' :
+                                    'border-gray-300'
+                                  }`}>
+                                  {step.status === 'completed' && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <span className={`text-[14px] font-semibold ${step.status === 'pending' ? 'text-gray-400' : 'text-gray-700'
+                                  }`}>
+                                  {step.title}
+                                </span>
+                                {step.status === 'active' && (
+                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse ml-1" />
+                                )}
+                              </div>
+                              {step.description && step.status !== 'pending' && (
+                                <p className="text-[13px] text-gray-500 mt-1 ml-6">
+                                  {step.description}
+                                </p>
+                              )}
+                              {step.searchQuery && (
+                                <div className="flex items-center gap-2 bg-[#f8f9fa] rounded-lg px-3 py-1.5 mt-2 ml-6 border border-gray-100">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                                  </svg>
+                                  <code className="text-[12px] text-gray-600 font-mono truncate">
+                                    {step.searchQuery}
+                                  </code>
+                                </div>
+                              )}
+                              {step.status === 'active' && step.toolUsed && (
+                                <div className="flex items-center gap-2 text-[13px] text-gray-500 mt-1 ml-6">
+                                  <span>{step.toolUsed === 'search' ? 'Searching' : step.toolUsed === 'browse' ? 'Using browser' : step.toolUsed === 'thinking' ? 'Thinking' : 'Processing'}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {msg.content && (
                         <div className="text-[16px] font-medium text-[#2d3748] leading-relaxed max-w-[95%]">
                           <MarkdownRenderer content={msg.content} />
@@ -534,26 +695,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </div>
                       )}
 
-                      {/* Task Completed Indicator */}
-                      <div className="flex items-center gap-2 py-4 text-green-500 font-bold text-[14px]">
-                        <ICONS.CheckCircle />
-                        Task completed
-                      </div>
-
-                      {/* Feedback Card */}
-                      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative group max-w-sm">
-                        <button className="absolute top-4 right-4 text-gray-300 hover:text-gray-500">
-                          <ICONS.X />
-                        </button>
-                        <h5 className="text-[16px] font-bold text-gray-900 mb-4">How was this result?</h5>
-                        <div className="flex items-center gap-2 text-gray-200">
-                          {[...Array(5)].map((_, i) => (
-                            <button key={i} className="hover:text-yellow-400 transition-colors">
-                              <ICONS.Star />
-                            </button>
-                          ))}
+                      {/* Task Completed Indicator - only show if there were agentic steps */}
+                      {msg.steps && msg.steps.length > 0 && msg.steps.every(s => s.status === 'completed') && (
+                        <div className="flex items-center gap-2 py-4 text-green-500 font-bold text-[14px]">
+                          <ICONS.CheckCircle />
+                          Task completed
                         </div>
-                      </div>
+                      )}
 
                       {/* Process Footer inside message */}
                       {msg.steps && msg.steps.length > 0 && (
@@ -591,8 +739,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="px-4 pb-12 flex flex-col items-center">
         <div className="max-w-2xl w-full flex flex-col gap-2">
 
-          {/* Active Floating Agent Card */}
-          {isProcessing && (
+          {/* Active Floating Agent Card - only shows for agentic tasks */}
+          {hasAgenticTask && (
             <div className="bg-white border border-gray-100 rounded-[1.5rem] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.05)] animate-in fade-in slide-in-from-bottom-4 duration-500 mb-2 overflow-hidden">
               <div className="flex items-start gap-4 mb-4">
                 <div
@@ -612,7 +760,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-[16px] font-bold text-gray-900 leading-none mb-1.5">Axon's computer</h4>
-                  <p className="text-[14px] font-medium text-gray-400 leading-tight">Axon is using the browser</p>
+                  <p className="text-[14px] font-medium text-gray-400 leading-tight">
+                    {activeAgenticStep?.toolUsed === 'browse' ? 'Axon is using the browser' :
+                      activeAgenticStep?.toolUsed === 'search' ? 'Axon is searching' :
+                        activeAgenticStep?.toolUsed === 'terminal' ? 'Axon is running commands' :
+                          'Axon is thinking'}
+                  </p>
                   <p className="text-[12px] font-bold text-gray-300 mt-1">{formatTime(elapsedSeconds)}</p>
                 </div>
                 <button onClick={() => setIsPlannerExpanded(!isPlannerExpanded)} className="text-gray-300 hover:text-gray-600 transition-colors pt-1">
