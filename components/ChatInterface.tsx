@@ -739,52 +739,104 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="px-4 pb-12 flex flex-col items-center">
         <div className="max-w-2xl w-full flex flex-col gap-2">
 
-          {/* Active Floating Agent Card - only shows for agentic tasks */}
+          {/* Floating Agent Card - Manus Style - directly above chatbar */}
           {hasAgenticTask && (
-            <div className="bg-white border border-gray-100 rounded-[1.5rem] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.05)] animate-in fade-in slide-in-from-bottom-4 duration-500 mb-2 overflow-hidden">
-              <div className="flex items-start gap-4 mb-4">
+            <div className="bg-white border border-gray-100/80 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* Collapsed View - Always Visible */}
+              <div
+                className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                onClick={() => setIsPlannerExpanded(!isPlannerExpanded)}
+              >
+                {/* Preview Thumbnail */}
                 <div
-                  onClick={onExpandWorkspace}
-                  className="relative w-16 h-12 bg-[#f8f9fa] rounded-xl border border-gray-100 overflow-hidden cursor-pointer group shrink-0"
+                  onClick={(e) => { e.stopPropagation(); onExpandWorkspace(); }}
+                  className="relative w-14 h-10 bg-gray-100 rounded-lg border border-gray-200/50 overflow-hidden cursor-pointer group shrink-0"
                 >
-                  <div className="p-1 space-y-1 opacity-20 h-full w-full">
-                    <div className="h-1 w-full bg-gray-400 rounded"></div>
-                    <div className="h-1 w-3/4 bg-gray-400 rounded"></div>
-                    <div className="h-1 w-5/6 bg-gray-400 rounded"></div>
+                  <div className="p-1.5 space-y-1 opacity-30 h-full w-full">
+                    <div className="h-0.5 w-full bg-gray-500 rounded"></div>
+                    <div className="h-0.5 w-3/4 bg-gray-500 rounded"></div>
+                    <div className="h-0.5 w-5/6 bg-gray-500 rounded"></div>
                   </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 flex items-center justify-center transition-all">
-                    <div className="bg-white/95 p-1 rounded-md shadow-sm opacity-80 scale-90">
-                      <ICONS.Maximize />
-                    </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                    <ICONS.Maximize />
                   </div>
                 </div>
+
+                {/* Current Step Info */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-[16px] font-bold text-gray-900 leading-none mb-1.5">Axon's computer</h4>
-                  <p className="text-[14px] font-medium text-gray-400 leading-tight">
-                    {activeAgenticStep?.toolUsed === 'browse' ? 'Axon is using the browser' :
-                      activeAgenticStep?.toolUsed === 'search' ? 'Axon is searching' :
-                        activeAgenticStep?.toolUsed === 'terminal' ? 'Axon is running commands' :
-                          'Axon is thinking'}
-                  </p>
-                  <p className="text-[12px] font-bold text-gray-300 mt-1">{formatTime(elapsedSeconds)}</p>
-                </div>
-                <button onClick={() => setIsPlannerExpanded(!isPlannerExpanded)} className="text-gray-300 hover:text-gray-600 transition-colors pt-1">
-                  {isPlannerExpanded ? <ICONS.ChevronUp /> : <ICONS.ChevronDown />}
-                </button>
-              </div>
-              {isPlannerExpanded && (
-                <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-[16px] font-bold text-gray-900">Planner</h5>
-                    <span className="text-[14px] font-bold text-gray-300">{completedStepsCount}/{totalSteps}</span>
+                  <div className="flex items-center gap-2">
+                    {/* Active indicator dot */}
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></div>
+                    <span className="text-[14px] font-semibold text-gray-900 truncate">
+                      {activeAgenticStep?.title || steps[0]?.title || 'Processing...'}
+                    </span>
                   </div>
-                  <div className="space-y-4">
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[12px] text-gray-400">{formatTime(elapsedSeconds)}</span>
+                    <span className="text-[12px] text-gray-400">
+                      {activeAgenticStep?.toolUsed === 'browse' ? 'Using browser' :
+                        activeAgenticStep?.toolUsed === 'search' ? 'Searching' :
+                          activeAgenticStep?.toolUsed === 'terminal' ? 'Running command' :
+                            'Thinking'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step Counter and Expand */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[13px] font-semibold text-gray-400">
+                    {completedStepsCount + 1}/{totalSteps}
+                  </span>
+                  <div className="text-gray-300 hover:text-gray-500 transition-colors">
+                    {isPlannerExpanded ? <ICONS.ChevronUp /> : <ICONS.ChevronDown />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Expanded View - Task Progress Section */}
+              {isPlannerExpanded && (
+                <div className="border-t border-gray-100 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="text-[14px] font-bold text-gray-700">Task progress</h5>
+                    <span className="text-[13px] font-semibold text-gray-400">{completedStepsCount}/{totalSteps}</span>
+                  </div>
+
+                  {/* Steps List */}
+                  <div className="space-y-3">
                     {steps.map((step, idx) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border transition-all ${step.status === 'completed' ? 'text-green-500 bg-green-50 border-transparent' : 'border-gray-200'}`}>
-                          {step.status === 'completed' && <ICONS.Check />}
+                      <div key={idx} className="flex items-start gap-3">
+                        {/* Status Icon */}
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5
+                          ${step.status === 'completed' ? 'text-green-500' :
+                            step.status === 'active' ? 'text-blue-500' : 'text-gray-300'}`}>
+                          {step.status === 'completed' ? (
+                            <ICONS.CheckCircle />
+                          ) : step.status === 'active' ? (
+                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                          ) : (
+                            <ICONS.Clock />
+                          )}
                         </div>
-                        <span className={`text-[15px] font-bold tracking-tight ${step.status === 'pending' ? 'text-gray-300' : 'text-gray-700'}`}>{step.title}</span>
+
+                        {/* Step Content */}
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-[14px] font-medium block truncate
+                            ${step.status === 'pending' ? 'text-gray-400' : 'text-gray-800'}`}>
+                            {step.title}
+                          </span>
+                          {step.status === 'active' && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[12px] text-gray-400">{formatTime(elapsedSeconds)}</span>
+                              <span className="text-[12px] text-gray-400">
+                                {step.toolUsed === 'browse' ? 'Using browser' :
+                                  step.toolUsed === 'search' ? 'Searching' :
+                                    step.toolUsed === 'terminal' ? 'Running command' :
+                                      'Thinking'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
