@@ -104,11 +104,11 @@ const App: React.FC = () => {
             break;
 
           case 'update_status':
-            const { message, activeStepId } = call.args as any;
+            const { message, activeStepId, toolUsed } = call.args as any;
             if (activeStepId) {
               setCurrentSteps(prevSteps => {
                 const updatedSteps = prevSteps.map(s => {
-                  if (s.id === activeStepId) return { ...s, status: 'active' as const, description: message };
+                  if (s.id === activeStepId) return { ...s, status: 'active' as const, description: message, toolUsed: toolUsed || 'thinking' };
                   if (s.status === 'active') return { ...s, status: 'completed' as const };
                   return s;
                 });
