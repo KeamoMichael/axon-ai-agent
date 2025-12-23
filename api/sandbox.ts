@@ -58,19 +58,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let sandbox: Sandbox | null = null;
 
     try {
-        console.log('[E2B] Creating sandbox with 24h timeout...');
+        console.log('[E2B] Step 1: Starting sandbox creation...');
+        console.log('[E2B] API Key present:', !!E2B_API_KEY);
+        console.log('[E2B] API Key first 10 chars:', E2B_API_KEY?.substring(0, 10));
 
         // Create a new sandbox session with 24 HOUR timeout (max allowed) for persistent agentic tasks
         // timeout is in SECONDS per E2B docs
+        console.log('[E2B] Step 2: Calling Sandbox.create()...');
         sandbox = await Sandbox.create({
-            timeout: 86400,  // 24 hours in seconds (max allowed by E2B)
+            timeoutMs: 24 * 60 * 60 * 1000,  // 24 hours in milliseconds (max allowed by E2B)
             metadata: {
                 sessionId: metadata?.sessionId || 'anonymous',
                 timestamp: new Date().toISOString(),
                 ...metadata
             }
         });
-        console.log('[E2B] Sandbox created successfully with 24h timeout');
+        console.log('[E2B] Step 3: Sandbox created successfully! ID:', sandbox.sandboxId);
 
         // Action: Execute Python code
         if (action === 'execute') {
