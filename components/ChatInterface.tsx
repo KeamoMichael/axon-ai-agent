@@ -75,22 +75,47 @@ const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
   );
 };
 
-const FileAttachment: React.FC<{ file: GeneratedFile }> = ({ file }) => (
-  <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl my-2 hover:bg-gray-50 transition-colors cursor-pointer group shadow-sm">
-    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${file.type === 'zip' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`}>
-      {file.type === 'zip' ? <ICONS.Zip /> : <ICONS.Code />}
+const FileAttachment: React.FC<{ file: GeneratedFile }> = ({ file }) => {
+  const handleDownload = async () => {
+    try {
+      // Download file from sandbox
+      const response = await fetch(`/api/download?filename=${encodeURIComponent(file.name)}`);
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
+  return (
+    <div
+      onClick={handleDownload}
+      className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl my-2 hover:bg-gray-50 transition-colors cursor-pointer group shadow-sm"
+    >
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${file.type === 'zip' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`}>
+        {file.type === 'zip' ? <ICONS.Zip /> : <ICONS.Code />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h5 className="text-[14px] font-bold text-gray-900 truncate">{file.name}</h5>
+        <p className="text-[12px] text-gray-400 font-medium">
+          {file.type === 'zip' ? 'Archive' : 'Code'} · {file.size || 'Generated'}
+        </p>
+      </div>
+      <div className="text-gray-200 group-hover:text-gray-400 transition-colors">
+        <ICONS.Download />
+      </div>
     </div>
-    <div className="flex-1 min-w-0">
-      <h5 className="text-[14px] font-bold text-gray-900 truncate">{file.name}</h5>
-      <p className="text-[12px] text-gray-400 font-medium">
-        {file.type === 'zip' ? 'Archive' : 'Code'} · {file.size || '384 B'}
-      </p>
-    </div>
-    <div className="text-gray-200 group-hover:text-gray-400 transition-colors">
-      <ICONS.Download />
-    </div>
-  </div>
-);
+  );
+};
 
 // Markdown Renderer Component
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
