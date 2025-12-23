@@ -73,6 +73,13 @@ const App: React.FC = () => {
     setLogs(prev => [...prev, { id: Date.now().toString(), timestamp: new Date(), message, type }]);
   };
 
+  const handleModelChange = (modelId: string) => {
+    if (agentRef.current) {
+      agentRef.current.setModel(modelId);
+      addLog(`Switched to model: ${modelId}`, 'info');
+    }
+  };
+
   const updateLastAssistantMessage = (updates: Partial<ChatMessage>) => {
     setMessages(prev => {
       const newMsgs = [...prev];
@@ -398,10 +405,11 @@ const App: React.FC = () => {
             messages={messages}
             onSendMessage={handleSendMessage}
             isProcessing={isProcessing}
-            onOpenSidebar={() => setView('history')}
-            onExpandWorkspace={() => setIsWorkspaceExpanded(true)}
-            activeStep={activeStep}
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            onExpandWorkspace={() => setIsWorkspaceExpanded(!isWorkspaceExpanded)}
+            activeStep={currentSteps.find(s => s.status === 'active')}
             steps={currentSteps}
+            onModelChange={handleModelChange}
           />
         </div>
       </main>

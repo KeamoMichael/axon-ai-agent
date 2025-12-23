@@ -125,13 +125,30 @@ REMEMBER: Create plan → Execute steps → Provide results. Never stop at plann
 export class GeminiAgent {
   private chat: any;
   private isAvailable: boolean;
+  private currentModel: string;
 
-  constructor() {
+  constructor(model: string = 'gemini-2.0-flash-exp') {
     this.isAvailable = ai !== null;
+    this.currentModel = model;
 
     if (ai) {
       this.chat = ai.chats.create({
-        model: 'gemini-2.0-flash-exp',
+        model: this.currentModel,
+        config: {
+          systemInstruction,
+          tools: [
+            { functionDeclarations: [createPlan, updateStatus, browseUrl, executeTerminal, webSearch] }
+          ]
+        }
+      });
+    }
+  }
+
+  setModel(model: string) {
+    this.currentModel = model;
+    if (ai) {
+      this.chat = ai.chats.create({
+        model: this.currentModel,
         config: {
           systemInstruction,
           tools: [

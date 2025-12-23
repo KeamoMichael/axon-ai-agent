@@ -11,12 +11,14 @@ interface ChatInterfaceProps {
   onExpandWorkspace: () => void;
   activeStep?: PlanStep;
   steps?: PlanStep[];
+  onModelChange?: (modelId: string) => void;
 }
 
 const MODELS = [
-  { id: 'gemini-3-pro-preview', name: 'Axon 1.6 Lite', description: 'high speed & efficiency' },
-  { id: 'gemini-2.5-flash-lite-latest', name: 'Axon 1.6 Pro', description: 'complex reasoning' },
+  { id: 'gemini-2.0-flash-exp', name: 'Axon 1.6 Lite', description: 'high speed & efficiency' },
+  { id: 'gemini-2.0-flash-thinking-exp-01-21', name: 'Axon 1.6 Pro', description: 'complex reasoning' },
 ];
+
 
 const Waveform = () => (
   <div className="flex items-center gap-[3px] h-8 px-2">
@@ -358,7 +360,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onOpenSidebar,
   onExpandWorkspace,
   activeStep,
-  steps = []
+  steps = [],
+  onModelChange
 }) => {
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
@@ -555,7 +558,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {MODELS.map((model) => (
                     <button
                       key={model.id}
-                      onClick={() => { setSelectedModel(model); setIsModelSelectorOpen(false); }}
+                      onClick={() => {
+                        setSelectedModel(model);
+                        setIsModelSelectorOpen(false);
+                        onModelChange?.(model.id);
+                      }}
                       className={`w-full text-left px-4 py-3 rounded-[1rem] transition-colors flex flex-col ${selectedModel.id === model.id ? 'bg-[#f8f9fa]' : 'hover:bg-gray-50/80'}`}
                     >
                       <span className="text-[16px] font-bold text-[#111] leading-none">{model.name}</span>
