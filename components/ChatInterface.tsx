@@ -364,7 +364,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isPlannerExpanded, setIsPlannerExpanded] = useState(true);
+  const [isPlannerExpanded, setIsPlannerExpanded] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Dictation states
@@ -737,7 +737,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Input Area */}
       <div className="px-4 pb-12 flex flex-col items-center">
-        <div className="max-w-2xl w-full flex flex-col gap-2">
+        <div className="max-w-2xl w-full flex flex-col gap-1">
 
           {/* Floating Agent Card - Manus Style - directly above chatbar */}
           {hasAgenticTask && (
