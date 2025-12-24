@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
   activeStep?: PlanStep;
   steps?: PlanStep[];
   onModelChange?: (modelId: string) => void;
+  onStop?: () => void;
 }
 
 const MODELS = [
@@ -386,7 +387,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onExpandWorkspace,
   activeStep,
   steps = [],
-  onModelChange
+  onModelChange,
+  onStop
 }) => {
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
@@ -991,7 +993,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={startRecording} className="p-1 text-gray-400 hover:text-black transition-colors shrink-0"><ICONS.Mic /></button>
-                    <button onClick={() => handleSubmit()} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isProcessing ? 'bg-black text-white' : input.trim() || files.length > 0 ? 'bg-black text-white' : 'bg-transparent text-gray-300'}`}>
+                    <button onClick={() => isProcessing && onStop ? onStop() : handleSubmit()} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isProcessing ? 'bg-black text-white' : input.trim() || files.length > 0 ? 'bg-black text-white' : 'bg-transparent text-gray-300'}`}>
                       {isProcessing ? <div className="w-3.5 h-3.5 bg-white rounded-sm"></div> : <ICONS.Send />}
                     </button>
                   </div>

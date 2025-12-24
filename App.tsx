@@ -478,6 +478,11 @@ const App: React.FC = () => {
             activeStep={currentSteps.find(s => s.status === 'active')}
             steps={currentSteps}
             onModelChange={handleModelChange}
+            onStop={() => {
+              setIsProcessing(false);
+              setCurrentSteps(prev => prev.map(s => ({ ...s, status: 'completed' as const })));
+              console.log('Task stopped by user');
+            }}
           />
         </div>
       </main>
