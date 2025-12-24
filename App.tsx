@@ -6,6 +6,7 @@ import HistoryInterface from './components/HistoryInterface';
 import AgentWorkspace from './components/AgentWorkspace';
 import { ChatMessage, PlanStep, GroundingMetadata, AgentStatus, AgentLog, WorkspaceState, GeneratedFile, ChatSession } from './types';
 import { GeminiAgent } from './services/geminiService';
+import { OllamaAgent, isOllamaAvailable } from './services/ollamaService';
 import { GenerateContentResponse } from '@google/genai';
 
 const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
@@ -63,10 +64,23 @@ const App: React.FC = () => {
   const [browserUrl, setBrowserUrl] = useState<string>('');
   const [isBrowserActive, setIsBrowserActive] = useState(false);
   const [sandboxFiles, setSandboxFiles] = useState<GeneratedFile[]>([]);
+  const [useLocalModels, setUseLocalModels] = useState(false);
 
   const agentRef = useRef<GeminiAgent | null>(null);
+  const ollamaRef = useRef<OllamaAgent | null>(null);
 
   useEffect(() => {
+    // Check if Ollama is available for local development
+    isOllamaAvailable().then(available => {
+      setUseLocalModels(available);
+      if (available) {
+        ollamaRef.current = new OllamaAgent('axon-lite');
+        console.log('[App] Using local Ollama models');
+      } else {
+        console.log('[App] Ollama not available, using Gemini');
+      }
+    });
+
     agentRef.current = new GeminiAgent();
     setIsApiConfigured(agentRef.current.isApiConfigured());
   }, [currentSessionId]); // Re-init agent for new sessions to clear context
@@ -77,7 +91,10 @@ const App: React.FC = () => {
   };
 
   const handleModelChange = (modelId: string) => {
-    if (agentRef.current) {
+    if (useLocalModels && ollamaRef.current) {
+      ollamaRef.current.setModel(modelId as 'axon-lite' | 'axon-pro');
+      addLog(`Switched to local model: ${modelId}`, 'info');
+    } else if (agentRef.current) {
       agentRef.current.setModel(modelId);
       addLog(`Switched to model: ${modelId}`, 'info');
     }

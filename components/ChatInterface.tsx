@@ -16,8 +16,8 @@ interface ChatInterfaceProps {
 }
 
 const MODELS = [
-  { id: 'gemini-2.0-flash-exp', name: 'Axon 1.6 Lite', description: 'high speed & efficiency' },
-  { id: 'gemini-2.0-flash-thinking-exp-01-21', name: 'Axon 1.6 Pro', description: 'complex reasoning' },
+  { id: 'axon-lite', name: 'Axon 1.6 Lite', description: 'fast local model (llama3.2)' },
+  { id: 'axon-pro', name: 'Axon 1.6 Pro', description: 'smart reasoning (qwen2.5)' },
 ];
 
 
